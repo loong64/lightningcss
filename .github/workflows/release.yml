@@ -1,0 +1,158 @@
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build'
+        required: false
+        default: ''
+  schedule:
+    - cron: '0 20 * * *'
+
+jobs:
+  check:
+    runs-on: ubuntu-slim
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      build: ${{ steps.check-build.outputs.build }}
+    steps:
+      - name: Check Version
+        id: get-version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            version="${{ inputs.version }}"
+          else
+            version=$(curl -s 'https://api.github.com/repos/parcel-bundler/lightningcss/releases/latest' | jq -r ".tag_name")
+          fi
+          echo "Current Version: ${version}"
+          if [ -z "${version}" ] || [ "${version}" == "null" ]; then
+            echo "Failed to get version"
+            exit 1
+          fi
+          echo "version=${version}" >> $GITHUB_ENV
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
+      - name: Check Build
+        id: check-build
+        run: |
+          gh release view ${version} -R ${{ github.repository }} >/dev/null 2>&1 || echo "build=1" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    needs: check
+    if: needs.check.outputs.build == '1'
+    env:
+      version: ${{ needs.check.outputs.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: loongarch64-unknown-linux-gnu
+            strip: llvm-strip
+            image: ghcr.io/loong64/napi-rs/nodejs-rust:lts-debian
+          - target: loongarch64-unknown-linux-musl
+            image: ghcr.io/loong64/napi-rs/nodejs-rust:lts-alpine
+            strip: aarch64-linux-musl-strip
+    name: build-${{ matrix.target }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: parcel-bundler/lightningcss
+          ref: ${{ env.version }}
+      - name: Install Node.JS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 18
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Setup rust target
+        run: rustup target add ${{ matrix.target }}
+      - uses: bahmutov/npm-install@v1.8.32
+      - name: Prepare build
+        run: |
+          wget -qO - https://github.com/${{ github.repository }}/raw/refs/heads/master/patch_loong64.patch | patch -p1
+      - name: Build release
+        run: yarn build-release
+        env:
+          ANDROID_NDK_LATEST_HOME: /tmp/android-ndk-r28
+          RUST_TARGET: ${{ matrix.target }}
+      - name: Build CLI
+        env:
+          ANDROID_NDK_LATEST_HOME: /tmp/android-ndk-r28
+        run: |
+          yarn napi build --bin lightningcss --release --features cli --target ${{ matrix.target }}
+          mv target/${{ matrix.target }}/release/lightningcss lightningcss
+      - name: Strip debug symbols # https://github.com/rust-lang/rust/issues/46034
+        if: ${{ matrix.strip }}
+        run: ${{ matrix.strip }} *.node lightningcss
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.target }}
+          path: |
+            *.node
+            lightningcss
+
+  release:
+    runs-on: ubuntu-latest
+    name: Build and release
+    needs:
+      - check
+      - build-linux
+    if: needs.check.outputs.build == '1'
+    env:
+      version: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: parcel-bundler/lightningcss
+          ref: ${{ env.version }}
+      - uses: bahmutov/npm-install@v1.8.32
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Show artifacts
+        run: ls -R artifacts
+      - name: Prepare build
+        run: |
+          wget -qO - https://github.com/${{ github.repository }}/raw/refs/heads/master/patch_loong64.patch | patch -p1
+      - name: Build npm packages
+        run: |
+          node scripts/build-npm.js
+      - name: Publish to npm
+        run: |
+          for pkg in npm/*; do
+            echo "Publishing $pkg..."
+            cd $pkg;
+            npm pack;
+            cd ../..;
+          done
+          cd wasm
+          echo "Publishing lightningcss-wasm...";
+          npm pack
+          cd ..
+          cd cli
+          echo "Publishing lightningcss-cli...";
+          npm pack
+          cd ..
+          echo "Publishing lightningcss...";
+          npm pack
+      - name: Make artifacts
+        run: |
+          mkdir -p release-assets
+          find . -name "*.tgz" -exec mv {} release-assets/ \;
+          ls -lh release-assets/
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="${version}"
+          gh release create "${TAG_NAME}" \
+            --generate-notes \
+            --title "${TAG_NAME}" \
+            release-assets/*
