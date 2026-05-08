@@ -1,15 +1,15 @@
 diff --git a/.cargo/config.toml b/.cargo/config.toml
-index 10746d7..229495a 100644
+index 10746d7..c6b6086 100644
 --- a/.cargo/config.toml
 +++ b/.cargo/config.toml
 @@ -11,6 +11,13 @@ linker = "arm-linux-gnueabihf-gcc"
  linker = "aarch64-linux-musl-gcc"
  rustflags = ["-C", "target-feature=-crt-static"]
  
-+[target.aarch64-unknown-linux-gnu]
++[target.loongarch64-unknown-linux-gnu]
 +linker = "loongarch64-linux-gnu-gcc"
 +
-+[target.aarch64-unknown-linux-musl]
++[target.loongarch64-unknown-linux-musl]
 +linker = "loongarch64-linux-musl-gcc"
 +rustflags = ["-C", "target-feature=+crt-static"]
 +
@@ -17,25 +17,54 @@ index 10746d7..229495a 100644
  rustflags = [
      "-C",
 diff --git a/scripts/build-npm.js b/scripts/build-npm.js
-index ef447a7..ce12620 100644
+index ef447a7..ffec7a8 100644
 --- a/scripts/build-npm.js
 +++ b/scripts/build-npm.js
-@@ -32,6 +32,14 @@ const triples = [
-     name: 'aarch64-unknown-linux-musl',
-     libc: 'musl',
-   },
-+  {
-+    name: 'loongarch64-unknown-linux-gnu',
-+    libc: 'glibc',
-+  },
-+  {
-+    name: 'loongarch64-unknown-linux-musl',
-+    libc: 'musl',
-+  },
+@@ -6,41 +6,12 @@ const dir = `${__dirname}/..`;
+ // Add `libc` fields only to platforms that have libc(Standard C library).
+ const triples = [
    {
-     name: 'x86_64-unknown-linux-musl',
+-    name: 'x86_64-apple-darwin',
+-  },
+-  {
+-    name: 'x86_64-unknown-linux-gnu',
+-    libc: 'glibc',
+-  },
+-  {
+-    name: 'x86_64-pc-windows-msvc',
+-  },
+-  {
+-    name: 'aarch64-pc-windows-msvc'
+-  },
+-  {
+-    name: 'aarch64-apple-darwin',
+-  },
+-  {
+-    name: 'aarch64-unknown-linux-gnu',
++    name: 'loongarch64-unknown-linux-gnu',
+     libc: 'glibc',
+   },
+   {
+-    name: 'armv7-unknown-linux-gnueabihf',
+-  },
+-  {
+-    name: 'aarch64-unknown-linux-musl',
+-    libc: 'musl',
+-  },
+-  {
+-    name: 'x86_64-unknown-linux-musl',
++    name: 'loongarch64-unknown-linux-musl',
      libc: 'musl',
-@@ -48,6 +56,7 @@ const cpuToNodeArch = {
+-  },
+-  {
+-    name: 'x86_64-unknown-freebsd'
+-  },
+-  {
+-    name: 'aarch64-linux-android'
+   }
+ ];
+ const cpuToNodeArch = {
+@@ -48,6 +19,7 @@ const cpuToNodeArch = {
    aarch64: 'arm64',
    i686: 'ia32',
    armv7: 'arm',

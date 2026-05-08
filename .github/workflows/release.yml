@@ -7,7 +7,7 @@ on:
         required: false
         default: ''
   schedule:
-    - cron: '0 20 * * *'
+    - cron: '0 10 * * *'
 
 jobs:
   check:
@@ -53,7 +53,7 @@ jobs:
             image: ghcr.io/loong64/napi-rs/nodejs-rust:lts-debian
           - target: loongarch64-unknown-linux-musl
             image: ghcr.io/loong64/napi-rs/nodejs-rust:lts-alpine
-            strip: aarch64-linux-musl-strip
+            strip: loongarch64-linux-musl-strip
     name: build-${{ matrix.target }}
     runs-on: ubuntu-latest
     container:
@@ -89,6 +89,14 @@ jobs:
       - name: Strip debug symbols # https://github.com/rust-lang/rust/issues/46034
         if: ${{ matrix.strip }}
         run: ${{ matrix.strip }} *.node lightningcss
+      - name: Rename artifacts
+        if: contains(matrix.target, 'loongarch64')
+        shell: bash
+        run: |
+          for file in *.node; do
+            new_file=$(echo "$file" | sed 's/loongarch64/loong64/')
+            mv "$file" "$new_file"
+          done
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -132,10 +140,6 @@ jobs:
             npm pack;
             cd ../..;
           done
-          cd wasm
-          echo "Publishing lightningcss-wasm...";
-          npm pack
-          cd ..
           cd cli
           echo "Publishing lightningcss-cli...";
           npm pack
@@ -153,6 +157,7 @@ jobs:
         run: |
           TAG_NAME="${version}"
           gh release create "${TAG_NAME}" \
+            --repo ${{ github.repository }} \
             --generate-notes \
             --title "${TAG_NAME}" \
             release-assets/*
