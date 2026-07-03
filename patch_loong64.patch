@@ -17,58 +17,36 @@ index 10746d7..c6b6086 100644
  rustflags = [
      "-C",
 diff --git a/scripts/build-npm.js b/scripts/build-npm.js
-index ef447a7..ffec7a8 100644
+index ef447a7..df96e9f 100644
 --- a/scripts/build-npm.js
 +++ b/scripts/build-npm.js
-@@ -6,41 +6,12 @@ const dir = `${__dirname}/..`;
- // Add `libc` fields only to platforms that have libc(Standard C library).
- const triples = [
-   {
--    name: 'x86_64-apple-darwin',
--  },
--  {
--    name: 'x86_64-unknown-linux-gnu',
--    libc: 'glibc',
--  },
--  {
--    name: 'x86_64-pc-windows-msvc',
--  },
--  {
--    name: 'aarch64-pc-windows-msvc'
--  },
--  {
--    name: 'aarch64-apple-darwin',
--  },
--  {
--    name: 'aarch64-unknown-linux-gnu',
-+    name: 'loongarch64-unknown-linux-gnu',
+@@ -25,6 +25,10 @@ const triples = [
+     name: 'aarch64-unknown-linux-gnu',
      libc: 'glibc',
    },
++  {
++    name: 'loongarch64-unknown-linux-gnu',
++    libc: 'glibc',
++  },
    {
--    name: 'armv7-unknown-linux-gnueabihf',
--  },
--  {
--    name: 'aarch64-unknown-linux-musl',
--    libc: 'musl',
--  },
--  {
--    name: 'x86_64-unknown-linux-musl',
-+    name: 'loongarch64-unknown-linux-musl',
+     name: 'armv7-unknown-linux-gnueabihf',
+   },
+@@ -32,6 +36,10 @@ const triples = [
+     name: 'aarch64-unknown-linux-musl',
      libc: 'musl',
--  },
--  {
--    name: 'x86_64-unknown-freebsd'
--  },
--  {
--    name: 'aarch64-linux-android'
-   }
- ];
+   },
++  {
++    name: 'loongarch64-unknown-linux-musl',
++    libc: 'musl',
++  },
+   {
+     name: 'x86_64-unknown-linux-musl',
+     libc: 'musl',
+@@ -46,6 +54,7 @@ const triples = [
  const cpuToNodeArch = {
-@@ -48,6 +19,7 @@ const cpuToNodeArch = {
+   x86_64: 'x64',
    aarch64: 'arm64',
++  loongarch64: 'loong64',
    i686: 'ia32',
    armv7: 'arm',
-+  loongarch64: 'loong64',
  };
- const sysToNodePlatform = {
-   linux: 'linux',
