@@ -182,7 +182,7 @@ jobs:
             image: ghcr.io/loong64/napi-rs/nodejs-rust:lts-alpine
             strip: loongarch64-linux-musl-strip
     name: build-${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: ${{ matrix.image }}
     steps:
@@ -215,6 +215,7 @@ jobs:
       - uses: bahmutov/npm-install@v1.8.32
 
       - name: Prepare build
+        if: contains(matrix.target, 'loongarch64')
         run: |
           wget -qO - https://github.com/${{ github.repository }}/raw/refs/heads/master/patch_loong64.patch | patch -p1
 
@@ -249,7 +250,7 @@ jobs:
             lightningcss
 
   build-freebsd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: check
     if: needs.check.outputs.build == '1'
     env:
@@ -304,7 +305,7 @@ jobs:
             lightningcss
 
   build-wasm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: check
     if: needs.check.outputs.build == '1'
     env:
@@ -315,7 +316,7 @@ jobs:
           repository: parcel-bundler/lightningcss
           ref: ${{ env.version }}
       - name: Install Node.JS
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v3
         with:
           node-version: 18
       - uses: bahmutov/npm-install@v1.8.32
@@ -340,7 +341,7 @@ jobs:
           path: wasm/lightningcss_node.wasm
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Build and release
     needs:
       - check
@@ -407,7 +408,7 @@ jobs:
             release-assets/*
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Build and publish Lightning CSS
     needs:
       - check
