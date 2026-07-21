@@ -316,7 +316,7 @@ jobs:
           repository: parcel-bundler/lightningcss
           ref: ${{ env.version }}
       - name: Install Node.JS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: 18
       - uses: bahmutov/npm-install@v1.8.32
@@ -349,7 +349,7 @@ jobs:
       - build-linux
       - build-apple-silicon
       - build-freebsd
-      - build-wasm
+      # - build-wasm
     if: needs.check.outputs.build == '1'
     env:
       version: ${{ needs.check.outputs.version }}
@@ -371,7 +371,7 @@ jobs:
       - name: Build npm packages
         run: |
           node scripts/build-npm.js
-          cp artifacts/wasm/* wasm/.
+          # cp artifacts/wasm/* wasm/.
           node scripts/build-wasm.js
       - name: Publish to npm
         run: |
@@ -381,10 +381,10 @@ jobs:
             npm pack;
             cd ../..;
           done
-          cd wasm
-          echo "Publishing lightningcss-wasm...";
-          npm pack
-          cd ..
+          # cd wasm
+          # echo "Publishing lightningcss-wasm...";
+          # npm pack
+          # cd ..
           cd cli
           echo "Publishing lightningcss-cli...";
           npm pack
@@ -416,7 +416,7 @@ jobs:
       - build-linux
       - build-apple-silicon
       - build-freebsd
-      - build-wasm
+      # - build-wasm
     if: needs.check.outputs.build == '1'
     env:
       version: ${{ needs.check.outputs.version }}
@@ -438,7 +438,7 @@ jobs:
       - name: Build npm packages
         run: |
           node scripts/build-npm.js
-          cp artifacts/wasm/* wasm/.
+          # cp artifacts/wasm/* wasm/.
           node scripts/build-wasm.js
       - run: echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > ~/.npmrc
         env:
@@ -453,12 +453,12 @@ jobs:
             npm publish;
             cd ../..;
           done
-          cd wasm
-          echo "Publishing lightningcss-wasm...";
-          sed -i 's#"name": "lightningcss#"name": "@loong64/lightningcss#g' package.json
-          sed -i 's#github.com/parcel-bundler/#github.com/loong64/#g' package.json
-          npm publish
-          cd ..
+          # cd wasm
+          # echo "Publishing lightningcss-wasm...";
+          # sed -i 's#"name": "lightningcss#"name": "@loong64/lightningcss#g' package.json
+          # sed -i 's#github.com/parcel-bundler/#github.com/loong64/#g' package.json
+          # npm publish
+          # cd ..
           cd cli
           echo "Publishing lightningcss-cli...";
           sed -i 's#"name": "lightningcss#"name": "@loong64/lightningcss#g' package.json
