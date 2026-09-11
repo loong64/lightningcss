@@ -462,10 +462,14 @@ jobs:
           cd cli
           echo "Publishing lightningcss-cli...";
           sed -i 's#"name": "lightningcss#"name": "@loong64/lightningcss#g' package.json
+          sed -i 's#"lightningcss-cli-linux-loong64-gnu"#"@loong64/lightningcss-cli-linux-loong64-gnu"#g' package.json
+          sed -i 's#"lightningcss-cli-linux-loong64-musl"#"@loong64/lightningcss-cli-linux-loong64-musl"#g' package.json
           sed -i 's#github.com/parcel-bundler/#github.com/loong64/#g' package.json
           npm publish
           cd ..
           echo "Publishing lightningcss...";
           sed -i 's#"name": "lightningcss#"name": "@loong64/lightningcss#g' package.json
+          sed -i 's#"lightningcss-linux-loong64-gnu"#"@loong64/lightningcss-linux-loong64-gnu"#g' package.json
+          sed -i 's#"lightningcss-linux-loong64-musl"#"@loong64/lightningcss-linux-loong64-musl"#g' package.json
           sed -i 's#github.com/parcel-bundler/#github.com/loong64/#g' package.json
           npm publish
