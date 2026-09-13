@@ -1,3 +1,14 @@
+From d57fd12b1c67b5f9520583c325060dd830c19c0d Mon Sep 17 00:00:00 2001
+From: Elysia <a.elysia@proton.me>
+Date: Sun, 13 Sep 2026 16:19:06 +0800
+Subject: [PATCH] feat: add loong64 support
+
+---
+ .cargo/config.toml   | 7 +++++++
+ cli/postinstall.js   | 7 ++++++-
+ scripts/build-npm.js | 9 +++++++++
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+
 diff --git a/.cargo/config.toml b/.cargo/config.toml
 index 10746d7..c6b6086 100644
 --- a/.cargo/config.toml
@@ -16,6 +27,30 @@ index 10746d7..c6b6086 100644
  [target.wasm32-unknown-unknown]
  rustflags = [
      "-C",
+diff --git a/cli/postinstall.js b/cli/postinstall.js
+index 19dadc7..73de6b1 100644
+--- a/cli/postinstall.js
++++ b/cli/postinstall.js
+@@ -1,5 +1,6 @@
+ let fs = require('fs');
+ let path = require('path');
++const os = require('os');
+ 
+ let parts = [process.platform, process.arch];
+ if (process.platform === 'linux') {
+@@ -20,7 +21,11 @@ let binary = process.platform === 'win32' ? 'lightningcss.exe' : 'lightningcss';
+ 
+ let pkgPath;
+ try {
+-  pkgPath = path.dirname(require.resolve(`lightningcss-cli-${parts.join('-')}/package.json`));
++  if (os.arch() == 'loong64') {
++    pkgPath = path.dirname(require.resolve(`@loong64/lightningcss-cli-${parts.join('-')}/package.json`));
++  } else {
++    pkgPath = path.dirname(require.resolve(`lightningcss-cli-${parts.join('-')}/package.json`));
++  }
+ } catch (err) {
+   pkgPath = path.join(__dirname, '..', 'target', 'release');
+   if (!fs.existsSync(path.join(pkgPath, binary))) {
 diff --git a/scripts/build-npm.js b/scripts/build-npm.js
 index ef447a7..df96e9f 100644
 --- a/scripts/build-npm.js
@@ -50,3 +85,6 @@ index ef447a7..df96e9f 100644
    i686: 'ia32',
    armv7: 'arm',
  };
+-- 
+2.45.2.windows.1
+
