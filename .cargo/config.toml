@@ -11,10 +11,19 @@ linker = "arm-linux-gnueabihf-gcc"
 linker = "aarch64-linux-musl-gcc"
 rustflags = ["-C", "target-feature=-crt-static"]
 
+[target.loongarch64-unknown-linux-gnu]
+linker = "loongarch64-linux-gnu-gcc"
+
+[target.loongarch64-unknown-linux-musl]
+linker = "loongarch64-linux-musl-gcc"
+rustflags = ["-C", "target-feature=+crt-static"]
+
 [target.wasm32-unknown-unknown]
 rustflags = [
     "-C",
     "link-arg=--export-table",
+    "-C",
+    "link-arg=--import-undefined",
     '--cfg',
     'getrandom_backend="custom"',
 ]
