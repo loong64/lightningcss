@@ -33,6 +33,14 @@ const triples = [
     libc: 'musl',
   },
   {
+    name: 'loongarch64-unknown-linux-gnu',
+    libc: 'glibc',
+  },
+  {
+    name: 'loongarch64-unknown-linux-musl',
+    libc: 'musl',
+  },
+  {
     name: 'x86_64-unknown-linux-musl',
     libc: 'musl',
   },
@@ -48,6 +56,7 @@ const cpuToNodeArch = {
   aarch64: 'arm64',
   i686: 'ia32',
   armv7: 'arm',
+  loongarch64: 'loong64',
 };
 const sysToNodePlatform = {
   linux: 'linux',
