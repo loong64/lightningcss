@@ -1,0 +1,127 @@
+From 6ca43da623aa28b9fc355139633908d6f5f07b96 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E5=90=B4=E5=B0=8F=E7=99=BD?= <296015668@qq.com>
+Date: Thu, 19 Nov 2026 09:20:23 +0800
+Subject: [PATCH] feat: add loongarch64 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: 吴小白 <296015668@qq.com>
+---
+ .cargo/config.toml            |  9 +++++++++
+ .github/workflows/release.yml | 21 +++++++++++++++++++--
+ scripts/build-npm.js          |  9 +++++++++
+ 3 files changed, 37 insertions(+), 2 deletions(-)
+
+diff --git a/.cargo/config.toml b/.cargo/config.toml
+index 10746d766..0777e7512 100644
+--- a/.cargo/config.toml
++++ b/.cargo/config.toml
+@@ -11,10 +11,19 @@ linker = "arm-linux-gnueabihf-gcc"
+ linker = "aarch64-linux-musl-gcc"
+ rustflags = ["-C", "target-feature=-crt-static"]
+ 
++[target.loongarch64-unknown-linux-gnu]
++linker = "loongarch64-linux-gnu-gcc"
++
++[target.loongarch64-unknown-linux-musl]
++linker = "loongarch64-linux-musl-gcc"
++rustflags = ["-C", "target-feature=+crt-static"]
++
+ [target.wasm32-unknown-unknown]
+ rustflags = [
+     "-C",
+     "link-arg=--export-table",
++    "-C",
++    "link-arg=--import-undefined",
+     '--cfg',
+     'getrandom_backend="custom"',
+ ]
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+index 95d304311..f0b7a5db9 100644
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -118,6 +118,12 @@ jobs:
+           - target: aarch64-unknown-linux-musl
+             image: ghcr.io/napi-rs/napi-rs/nodejs-rust@sha256:78c9ab1f117f8c535b93c4b91a2f19063dda6e4dba48a6187df49810625992c1
+             strip: aarch64-linux-musl-strip
++          - target: loongarch64-unknown-linux-gnu
++            strip: llvm-strip
++            image: ghcr.io/loong64/napi-rs/nodejs-rust:lts-debian
++          - target: loongarch64-unknown-linux-musl
++            image: ghcr.io/loong64/napi-rs/nodejs-rust:lts-alpine
++            strip: loongarch64-linux-musl-strip
+           - target: x86_64-unknown-linux-musl
+             image: ghcr.io/napi-rs/napi-rs/nodejs-rust@sha256:78c9ab1f117f8c535b93c4b91a2f19063dda6e4dba48a6187df49810625992c1
+             strip: strip
+@@ -166,6 +172,13 @@ jobs:
+       - name: Strip debug symbols # https://github.com/rust-lang/rust/issues/46034
+         if: ${{ matrix.strip }}
+         run: ${{ matrix.strip }} *.node lightningcss
++      - name: Rename artifacts
++        if: contains(matrix.target, 'loongarch64')
++        run: |
++          for file in *.node; do
++            new_file=$(echo "$file" | sed 's/loongarch64/loong64/')
++            mv "$file" "$new_file"
++          done
+       - name: Upload artifacts
+         uses: actions/upload-artifact@v4
+         with:
+@@ -254,6 +267,8 @@ jobs:
+   release:
+     runs-on: ubuntu-latest
+     name: Build and release
++    env:
++      NPM_CONFIG_REGISTRY: https://${{ vars.LOONGDOTJS_NPM_REGISTRY }}
+     needs:
+       - build
+       - build-linux
+@@ -274,9 +289,10 @@ jobs:
+           node scripts/build-npm.js
+           cp artifacts/wasm/* wasm/.
+           node scripts/build-wasm.js
+-      - run: echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > ~/.npmrc
++      - run: echo "//${NPM_REGISTRY}/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+         env:
+-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
++          NPM_REGISTRY: ${{ vars.LOONGDOTJS_NPM_REGISTRY }}
++          NPM_TOKEN: ${{ secrets.LOONGDOTJS_NPM_TOKEN }}
+       - name: Publish to npm
+         run: |
+           for pkg in npm/*; do
+@@ -297,6 +313,7 @@ jobs:
+           npm publish
+ 
+   release-crates:
++    if: github.repository == 'parcel-bundler/lightningcss'
+     runs-on: ubuntu-latest
+     name: Release Rust crate
+     steps:
+diff --git a/scripts/build-npm.js b/scripts/build-npm.js
+index ef447a7ea..ce12620c9 100644
+--- a/scripts/build-npm.js
++++ b/scripts/build-npm.js
+@@ -32,6 +32,14 @@ const triples = [
+     name: 'aarch64-unknown-linux-musl',
+     libc: 'musl',
+   },
++  {
++    name: 'loongarch64-unknown-linux-gnu',
++    libc: 'glibc',
++  },
++  {
++    name: 'loongarch64-unknown-linux-musl',
++    libc: 'musl',
++  },
+   {
+     name: 'x86_64-unknown-linux-musl',
+     libc: 'musl',
+@@ -48,6 +56,7 @@ const cpuToNodeArch = {
+   aarch64: 'arm64',
+   i686: 'ia32',
+   armv7: 'arm',
++  loongarch64: 'loong64',
+ };
+ const sysToNodePlatform = {
+   linux: 'linux',
